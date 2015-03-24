@@ -1,0 +1,138 @@
+apply plugin: "java"
+apply plugin: "maven"
+apply plugin: 'eclipse'
+apply plugin: 'application'
+mainClassName = 'org.xmlsh.tools.mustache.cli.main.Main'
+applicationName = 'mustache'
+
+apply plugin: 'ivy-publish'
+apply plugin: 'maven-publish'
+group = "org.xmlsh"
+version = 1.0
+
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets.all { set ->
+    def jarTask = task("${set.name}Jar", type: Jar) {
+        baseName = baseName + "-$set.name"
+        from set.output
+    }
+    artifacts {
+        archives jarTask
+    }
+}
+
+task wrapper(type: Wrapper) {
+}
+eclipse {
+    classpath.downloadJavadoc = true
+}
+
+compileJava {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'mustache CLI',
+                   'Implementation-Version': version
+    }
+}
+
+
+
+sourceSets {
+    main
+}
+
+
+List sharedDeps = [
+    'commons-collections:commons-collections:3.1',
+    'com.github.spullara.mustache.java:compiler:0.9+',
+    'com.fasterxml.jackson.core:jackson-databind:2.0+',
+    'com.fasterxml.jackson.core:jackson-databind:2.0+',
+    
+     ]
+
+
+dependencies {
+    
+          
+    compile sharedDeps  
+    
+    testCompile 'junit:junit:4.9' 
+    testCompile 'com.github.stefanbirkner:system-rules:1.8.0'
+    
+    testCompile sourceSets.main.output
+   
+}
+
+test {
+    systemProperties 'property': 'value'
+}
+
+jar {
+    from sourceSets.main.output
+}
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+    
+}
+publishing {
+    repositories {
+        ivy {
+            // change to point to your repo, e.g. http://my.org/repo
+            url "${rootProject.buildDir}/_ivy_repo"
+        }
+        maven {
+            // change to point to your repo, e.g. http://my.org/repo
+            url "${rootProject.buildDir}/_maven_repo"
+        }
+    }
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifact sourceJar {
+                classifier "sources"
+            }
+        }
+        
+        ivyJava(IvyPublication) {
+            from components.java
+            artifact(sourceJar) {
+                type "source"
+                conf "runtime"
+            }
+            descriptor.withXml {
+                asNode().info[0].appendNode('description', description)
+            }
+        }
+    }
+}
+/*
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri("${buildDir}/repo"))
+
+            addFilter("main") { artifact, file -> artifact.name == project.name }
+            ["api", "main"].each { type ->
+                addFilter(type) { artifact, file -> artifact.name.endsWith("-$type") }
+                
+                // We now have to map our configurations to the correct maven scope for each pom
+                ["compile", "runtime"].each { scope ->
+                    configuration = configurations[type + scope.capitalize()]
+                    ["main", type].each { pomName ->
+                        pom(pomName).scopeMappings.addMapping 1, configuration, scope
+                    }
+                }
+            }
+
+        }
+    }
+}
+*/
