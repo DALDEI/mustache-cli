@@ -82,6 +82,7 @@ task sourceJar(type: Jar) {
     from sourceSets.main.allJava
     
 }
+
 publishing {
     repositories {
         ivy {

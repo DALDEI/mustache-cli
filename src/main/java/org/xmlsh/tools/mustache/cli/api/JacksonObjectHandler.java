@@ -165,14 +165,6 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
                     false);
             mapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, true);
 
-            /*
-             * Test code needs to go on AWS
-             * mapper.addMixInAnnotations(com.amazonaws
-             * .services.ec2.model.EbsBlockDevice.class,
-             * IgnoreVolumeTypeEnum.class);
-             */
-
-            // other completely global configurations
 
             if (_theObjectMapper == null)
                 _theObjectMapper = mapper;
