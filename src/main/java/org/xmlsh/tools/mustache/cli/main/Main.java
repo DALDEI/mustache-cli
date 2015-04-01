@@ -3,6 +3,7 @@ package org.xmlsh.tools.mustache.cli.main;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -115,10 +116,6 @@ public class Main {
                            
         
         
-	@FunctionalInterface
-	 public interface Encoder<T, R> {
-	     void accept(T t,R r) throws IOException;
-	 }
 	
 	
     private MustacheContext mContext = new MustacheContext();
@@ -134,6 +131,8 @@ public class Main {
 	
 	public Main(String[] args
 	     ) throws IOException, UsageException {
+	    
+	    
 		for (int i = 0;  i < args.length; i++){
 			 if( args[i].startsWith("-") ){
 				switch (args[i]) {
@@ -141,7 +140,7 @@ public class Main {
 				case "--root" : 
 				case "-R" :
 				case "--template-dir" : 
-					getMustacheFactory( new File(requiresArg(++i,args)));
+					mContext.setRoot(  new File(requiresArg(++i,args)));
 				break;
 				
 				case "-f":
@@ -175,9 +174,9 @@ public class Main {
 				case "--json-file": {
 					String fname = requiresArg(++i, args);
 					if (fname.equals("-"))
-					    mContext.addJsonScope(System.in );
+					    mContext.addJsonScope( mContext.getStreamReader(System.in ));
                     else
-                        try (Reader r = new FileReader(new File(fname))) {
+                        try (Reader r = mContext.getFileReader( fname ) ){
                         	Object jn = mContext.parseJson(r);
                         	mContext.getScope().add(jn);
                         }
@@ -191,9 +190,9 @@ public class Main {
 				case "--output": {
 					String fname = requiresArg(++i, args);
 					if (fname.equals("-"))
-						mContext.setOutput(new OutputStreamWriter(System.out));
+						mContext.setOutput( System.out);
 					else
-						mContext.setOutput(new FileWriter(new File(fname)));
+						mContext.setOutput( new FileOutputStream(new File(fname)));
 					break;
 				}
 				
@@ -229,16 +228,10 @@ public class Main {
 	   if (mContext.getOutput() == null)
 			mContext.setOutput(new PrintWriter(System.out));
 	}
-	private void getMustacheFactory(File file) {
-        // TODO Auto-generated method stub
-        
-    }
 
 
-    private void addScopePair(String string) {
-		
-		String[] pair = string.split("=");
-		mContext.getScope().add(Collections.singletonMap(pair[0], pair[1]));
+    public void addScopePair(String string) {
+		mContext.addStringScope( string );
 		
 	}
 
@@ -261,7 +254,7 @@ public class Main {
 	}
 	
 
-	public void run() throws IOException {
+	public void run() throws Exception {
 		try {
 		    mContext.execute();
 		} finally {

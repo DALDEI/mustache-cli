@@ -1,33 +1,112 @@
 package org.xmlsh.tools.mustache.cli.api;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Properties;
+import java.util.function.BiConsumer;
 
-import org.xmlsh.tools.mustache.cli.main.Main;
-import org.xmlsh.tools.mustache.cli.main.Main.Encoder;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.github.mustachejava.DefaultMustacheFactory;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.github.mustachejava.DefaultMustacheFactory; 
+import com.github.mustachejava.resolver.DefaultResolver;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheException;
-import com.github.mustachejava.MustacheFactory;
+import com.github.mustachejava.MustacheResolver;
 
 public class MustacheContext {
-    private DefaultMustacheFactory mf;
+    
+    
+    
+    
+    // Filesystem based resolver that is encoding configurable
+    public class EncodingAwareResolver implements MustacheResolver {
+
+        @Override
+        public Reader getReader(String resourceName) {
+            try {
+                return getFileReader( resourceName );
+            } catch (FileNotFoundException | UnsupportedEncodingException e) {
+                throw new MustacheException("Error opening resource" + resourceName, e);
+
+            }
+        }
+
+    }
+
+    private final class JacksonMustacheFactory extends DefaultMustacheFactory {
+        private JacksonMustacheFactory(MustacheResolver mustacheResolver) {
+            super(mustacheResolver);
+           setObjectHandler(new JacksonObjectHandler());
+
+        }
+
+        @Override
+        public void encode(String value, Writer writer)  { 
+            try {
+               if( encoder == null )
+                   writer.write(value);
+               else
+                 encoder.accept(value, writer);
+            } catch( Exception e ){
+                addError( e );
+            }
+        }
+    }
+
+    private DefaultMustacheFactory mFactory;
     private ArrayList<Object> scope = new ArrayList<>();
     private Reader template;
     private Writer output;
     private String template_name;
     private String delimStart = "{{";
     private String delimEnd = "}}";
-    private Encoder<String, Writer> encoder;
+    private BiConsumer<String, Writer> encoder ;
+    private File mRoot;
+    private Exception mErrors = null ;
+    private String mInputEncoding = System.getProperty("file.encoding");
+    private String mOutpuEncoding = System.getProperty("file.encoding");
+
+    public String getOutpuEncoding() {
+        return mOutpuEncoding;
+    }
+
+    public void setOutpuEncoding(String outpuEncoding) {
+        mOutpuEncoding = outpuEncoding;
+    }
+
+    public File getRoot() {
+        return mRoot == null ? new File( ".") : mRoot ; 
+    }
+
     public String getDelimEnd() {
         return delimEnd;
     }
@@ -36,10 +115,11 @@ public class MustacheContext {
         return delimStart;
     }
 
-    public Encoder<String, Writer> getEncoder() {
+    public BiConsumer<String, Writer> getEncoder() {
         return encoder;
     }
 
+    
 
     public Writer getOutput() {
         return output;
@@ -65,7 +145,7 @@ public class MustacheContext {
         this.delimStart = delimStart;
     }
 
-    public void setEncoder(Encoder<String, Writer> encoder) {
+    public void setEncoder(  BiConsumer<String, Writer> encoder) {
         this.encoder = encoder;
     }
 
@@ -88,78 +168,161 @@ public class MustacheContext {
         this.template_name = template_name;
 
     }
-     
+
 
     public DefaultMustacheFactory getMustacheFactory() {
-        if (mf == null){
-            mf = new DefaultMustacheFactory() {
-
-                @Override
-                public void encode(String value, Writer writer) {
-                    try {
-                        getEncoder().accept(value, writer);
-                    } catch (IOException e) {
-                        throw new MustacheException(
-                                "Failed to encode " + value, e);
-                    }
-                }
-            };
-            mf.setObjectHandler(new JacksonObjectHandler());
+        if (mFactory == null){
+            mFactory = new JacksonMustacheFactory( getResolver() );
         }
-        return mf;
+        return mFactory;
     }
 
-   public Writer execute() {
-       if( encoder == null )
-          encoder =    (s,w) -> w.write(s) ; 
-
-
-       Mustache mustache = getMustacheFactory().compile(getTemplate(),
-                getTemplate_name() == null ? "main" : getTemplate_name(),
-                getDelimStart(), getDelimEnd());
-
-        return mustache.execute(getOutput(), getScope().toArray());
+    private MustacheResolver getResolver() {
+       return new EncodingAwareResolver();
     }
 
-   
-   public Object parseJson(Reader r) throws JsonProcessingException,
-           IOException {
-       return JacksonObjectHandler.readJson(r);
+    protected void addError(Exception e) {
+        if( mErrors == null )
+            mErrors  = e ; 
+        else
+            mErrors.addSuppressed(e);
+        
+    }
 
-   }
-
-   private Object parseJson(String s) throws JsonProcessingException,
-           IOException {
-
-       return JacksonObjectHandler.readJson(s );
+    public void execute() throws Exception {
+            assert( output != null);
+            assert( getTemplate() != null);
 
 
-   }
+            Mustache mustache = getMustacheFactory().compile(getTemplate(),
+                    getTemplate_name() == null ? "main" : getTemplate_name(),
+                            getDelimStart(), getDelimEnd());
 
-   private Object parseJson(InputStream in) throws JsonProcessingException,
-           IOException {
-       return JacksonObjectHandler.readJson(in );
-   }
+            mustache.execute(getOutput(), getScope().toArray());
+            if( mErrors != null )
+                throw mErrors ;
+    }
 
-   public void addJsonScope(String arg) throws JsonProcessingException,
-           IOException {
-       getScope().add(parseJson(arg));
-   }
 
-   public void addJsonScope(InputStream in) throws JsonProcessingException,
-           IOException {
-       getScope().add(parseJson(in));
+    public Object parseJson(Reader r) throws JsonProcessingException,
+    IOException {
+        return JacksonObjectHandler.readJson(r);
 
-   }
+    }
 
-   public void addPropertiesScope(String filename) throws FileNotFoundException,
-           IOException {
-       Properties p = new Properties();
-       try (Reader r = new FileReader(new File(filename))) {
-           p.load(r);
-       }
+    public Object convertJson(JsonNode r) throws JsonProcessingException,
+    IOException {
+        return JacksonObjectHandler.convertJson(r);
 
-       getScope().add(p);
-   }
+    }
+    private Object parseJson(String s) throws JsonProcessingException,
+    IOException {
+
+        return JacksonObjectHandler.readJson(s );
+
+
+    }
+
+    private Object parseJson(InputStream in) throws JsonProcessingException,
+    IOException {
+        return JacksonObjectHandler.readJson(in );
+    }
+
+    public void addJsonScope(String arg) throws JsonProcessingException,
+    IOException {
+        getScope().add(parseJson(arg));
+    }
+
+    public void addJsonScope(InputStream in) throws JsonProcessingException,
+    IOException {
+        getScope().add(parseJson(in));
+
+    }
+
+    public void addPropertiesScope(String filename) throws FileNotFoundException,
+    IOException {
+        try (Reader r = getFileReader(filename)) {
+            addPropertiesScope(r);
+        }
+    }
+
+     public Reader getFileReader(String filename)
+            throws FileNotFoundException, UnsupportedEncodingException {
+        return getStreamReader(
+                new FileInputStream( resolveTemplateFile(filename))  );
+    }
+     public Reader getStreamReader(InputStream in )
+             throws FileNotFoundException, UnsupportedEncodingException {
+         return new InputStreamReader(in, getInputEncoding() );
+     }
+
+     String getInputEncoding() {
+         return mInputEncoding ;
+    }
+
+    File resolveTemplateFile( String filename ){
+
+         File file;
+         if( getRoot() == null )
+             file =  new File( filename );
+         else
+             file = new File( getRoot(), filename );
+         if( !file.exists()||!file.isFile()||!file.canRead() )
+                 throw new MustacheException("File does not exist or is unreadable: " + file);
+
+         return file;
+    
+    
+    }
+
+    public void setRoot(File file) {
+        assert( file != null );
+        assert( file.isDirectory());
+        if (!file.exists()) {
+            throw new MustacheException(file + " does not exist");
+          }
+          if (!file.isDirectory()) {
+            throw new MustacheException(file + " is not a directory");
+          }
+          this.mRoot = file;
+
+    }
+
+    public void addPropertiesScope(Reader reader) throws IOException {
+        Properties p = new Properties();
+        p.load(reader);
+        getScope().add(p);    
+    }
+
+    public void addJsonScope(Reader reader) throws JsonProcessingException, IOException {
+
+        getScope().add(parseJson(reader));
+    }
+
+    public void addJsonScope(JsonNode json) throws JsonProcessingException, IOException {
+        getScope().add(convertJson(json));
+
+    }
+
+    public void addStringScope(String string) {
+        String[] pair = string.split("=");
+        if( pair == null || pair.length != 2 )
+             throw new MustacheException("Unparsable context string: " + string);
+        getScope().add(Collections.singletonMap(pair[0], pair[1]));
+
+    }
+
+    public void addObjectScope( Object obj ){
+        getScope().add(obj);
+    }
+
+    void setInputEncoding(String encoding) {
+        mInputEncoding = encoding;
+    }
+
+    public void setOutput(OutputStream out) throws UnsupportedEncodingException {
+     setOutput( new OutputStreamWriter( out , getOutpuEncoding()));
+        
+    }
 
 }

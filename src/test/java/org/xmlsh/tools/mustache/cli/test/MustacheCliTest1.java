@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 
+import static org.junit.Assert.*;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -23,7 +25,7 @@ public class MustacheCliTest1 {
 
     
     @Rule
-    public StandardErrorStreamLog errLog = new StandardErrorStreamLog(LogMode.LOG_ONLY);
+    public StandardErrorStreamLog errLog = new StandardErrorStreamLog();
      
     @Rule
     public StandardOutputStreamLog  outLog = new StandardOutputStreamLog(LogMode.LOG_ONLY);
@@ -49,8 +51,8 @@ public class MustacheCliTest1 {
          String out = outLog.getLog();
          
          
-        String expected = "THIS IS A and that and [1, \"string\", {\"anon\":\"object\"}] and 1.2\n";
-        assert out.equals(expected) ;
+        String expected = "THIS IS A and that and [1,\"string\",{\"anon\":\"object\"}] and 1.2\n";
+        assertEquals("Expanded template", expected, out);
         
     }
     
@@ -66,7 +68,56 @@ public class MustacheCliTest1 {
 
          String out = outLog.getLog();
         String expected = "a=A,b=B,c.d=C.D";
-        assert out.equals(expected) ;
+        assertEquals( "Expanded Template" , expected,out);
         
     }
+    @Test
+    public void test3() throws Exception {
+        Main main = new Main( new String[] {
+           "-t" ,
+                "{{foo.bar}}",
+           "-j",
+            "{ \"foo\" : {  \"bar\" : [ 1 , \"hi\" ] } }" } );
+           main.run();
+
+         String out = outLog.getLog();
+        String expected = "[1,\"hi\"]";
+        assertEquals( "Expanded Template" , expected,out);
+        
+    }
+    
+    
+    @Test
+    public void test4() throws Exception {
+        Main main = new Main( new String[] {
+           "-t" ,
+                "[{{#foo.bar}}{{value}}{{delim}}{{/foo.bar}}]",
+           "-j",
+            "{ \"foo\" : {  \"bar\" : [ \"first\" , 2 , \"third\" , 4 , { \"fifth\" : 5 } ] } }" } );
+           main.run();
+
+         String out = outLog.getLog();
+        String expected = "[first,2,third,4,{\"fifth\":5}]";
+        assertEquals( "Expanded Template" , expected,out);
+        
+    }
+ 
+    @Test
+    public void test5() throws Exception {
+        Main main = new Main( new String[] {
+           "-t" ,
+                "{{#foo.bar}}{{#first}}[{{/first}}{{index}}|{{first}}|{{next}}|{{last}}|{{value}}|{{.}}|{{fifth}}|{{value.fifth}}{{#next}},{{/next}}{{#last}}]{{/last}} {{/foo.bar}}]",
+           "-j",
+            "{ \"foo\" : {  \"bar\" : [ \"first\" , 2 , \"third\" , 4 , { \"fifth\" : 5 } ] } }" } );
+           main.run();
+
+         String out = outLog.getLog();
+        String expected = "[0|true|true|false|first|first||, 1|false|true|false|2|2||, 2|false|true|false|third|third||, 3|false|true|false|4|4||, 4|false|false|true|{\"fifth\":5}|{\"fifth\":5}||5] ]";
+        assertEquals( "Expanded Template" , expected,out);
+        
+    }
+ 
+    
+    
+    
 }

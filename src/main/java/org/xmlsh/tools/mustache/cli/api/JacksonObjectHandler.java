@@ -3,13 +3,15 @@ package org.xmlsh.tools.mustache.cli.api;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.util.AbstractMap;
+import java.util.AbstractSet;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser.Feature;
@@ -26,42 +28,101 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.POJONode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.databind.node.ValueNode;
-import com.github.mustachejava.Binding;
-import com.github.mustachejava.Code;
 import com.github.mustachejava.MustacheException;
-import com.github.mustachejava.TemplateContext;
 import com.github.mustachejava.reflect.ReflectionObjectHandler;
-import com.github.mustachejava.reflect.guards.ClassGuard;
-import com.github.mustachejava.util.Wrapper;
+import com.github.mustachejava.util.DecoratedCollection;
 
 /**
  * Uses Jacksonto support JSON scope objects
  */
 public class JacksonObjectHandler extends ReflectionObjectHandler {
+    
+    
+    private final static  class DecoratedObjectNode extends AbstractMap<String,JsonNode> {
+        private final ObjectNode mJso;
+
+        private DecoratedObjectNode(ObjectNode jso) {
+            mJso = jso;
+        }
+
+        @Override
+        public String toString() {
+            return writeJson(mJso);
+        }
+
+        @Override
+        public   Set<Entry<String,JsonNode> >  entrySet() {
+          return   new AbstractSet<Entry<String,JsonNode>>() {
+                @Override
+                public Iterator<Entry<String,JsonNode> > iterator() {
+                    return mJso.fields();
+                }
+                @Override
+                public int size() {
+                    return 0;
+                } 
+            };
+        }
+
+        public JsonNode getNode() {
+            return mJso;
+        }
+
+    }
+
+    private final static class DecoratredJsonArray implements Iterable {
+        private final ArrayNode mAnode;
+
+        private DecoratredJsonArray(ArrayNode anode) {
+            mAnode = anode;
+        }
+
+        @Override
+        public Iterator iterator() {
+            return new DecoratedIterator(mAnode.iterator());
+        }
+
+        @Override
+        public String toString() {
+            return writeJson(mAnode);
+        }
+
+    }
+
+    public static Object convertJson(JsonNode j) {
+        if (j.isObject()) {
+            return
+                    new DecoratedObjectNode( (ObjectNode) j ) ;
+        }
+        if( j.isArray())
+            return new DecoratredJsonArray((ArrayNode) j );
+        return j;
+
+    }
 
     public static Object readJson(Reader r) throws JsonParseException,
-            JsonMappingException, IOException {
+    JsonMappingException, IOException {
 
         return getJsonObjectMapper().readValue(r,
                 new TypeReference<HashMap<String, JsonNode>>() {
-                });
+        });
 
     }
 
     public static Object readJson(String s) throws JsonParseException,
-            JsonMappingException, IOException {
+    JsonMappingException, IOException {
 
         return getJsonObjectMapper().readValue(s,
                 new TypeReference<HashMap<String, JsonNode>>() {
-                });
+        });
 
     }
 
     public static Object readJson(InputStream in) throws JsonParseException,
-            JsonMappingException, IOException {
+    JsonMappingException, IOException {
         return getJsonObjectMapper().readValue(in,
                 new TypeReference<HashMap<String, JsonNode>>() {
-                });
+        });
 
     }
 
@@ -70,9 +131,24 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
     @Override
     public String stringify(Object object) {
 
+        return writeObject(object);
+    }
+    
+    public static String writeObject( Object object ){
+        if( object == null )
+            return null ;
+        
+        if( object instanceof DecoratedObjectNode ) 
+           object = ((DecoratedObjectNode)object).getNode();
+        if( object instanceof DecoratedIterator<?>.Element ) 
+            object = ((DecoratedIterator<JsonNode>.Element)object).value;
+
+        if( object instanceof ValueNode )
+            object = valueNodeToObject( (ValueNode) object );
         if (object instanceof JsonNode)
             return writeJson((JsonNode) object);
-        return super.stringify(object);
+        
+        return object.toString();
     }
 
     public static String writeJson(final JsonNode jso)
@@ -86,63 +162,44 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
         }
     }
 
-    @SuppressWarnings("serial")
     @Override
     public Object coerce(Object object) {
         if (object instanceof JsonNode) {
             final JsonNode jso = (JsonNode) object;
-            if (jso.isArray()) {
-                final ArrayNode anode = ((ArrayNode) jso);
-                return new ArrayList<JsonNode>() {
-                    {
-                        anode.elements().forEachRemaining((e) -> add(e));
-                    }
-                };
-
-            }
-            if (jso.isObject()) {
-                @SuppressWarnings("serial")
-                HashMap<String, JsonNode> map = new HashMap<String, JsonNode>() {
-                    {
-                        jso.fields().forEachRemaining(
-                                e -> put(e.getKey(), e.getValue()));
-                    }
-
-                    @Override
-                    public String toString() {
-                        return writeJson(jso);
-                    }
-
-                };
-
-                // return map; // super.coerce(map);
-                return map;
-            }
+            if (jso.isArray() || jso.isObject() )
+                return convertJson( jso );
+                        
             if (jso.isMissingNode())
                 return null;
-
-            if (jso.isValueNode()) {
-                ValueNode vn = ((ValueNode) jso);
-                if (vn.isBinary())
-                    return ((BinaryNode) vn).binaryValue();
-                if (vn.isBoolean())
-                    return Boolean.valueOf(vn.asBoolean());
-                if (vn.isNull())
-                    return null;
-                if (vn.isNumber())
-                    return ((NumericNode) vn).numberValue();
-                if (vn.isPojo())
-                    return ((POJONode) vn).getPojo();
-
-                if (vn.isTextual())
-                    // Quote the string ?
-                    return ((TextNode) vn).textValue();
-                // return writeJson(vn);
-            }
+            if (jso.isValueNode()) 
+                return valueNodeToObject( (ValueNode) jso  );
         }
+         
         return super.coerce(object);
     }
 
+
+public static Object valueNodeToObject( ValueNode vn ){
+
+
+    if (vn.isBinary())
+        return ((BinaryNode) vn).binaryValue();
+    if (vn.isBoolean())
+        return Boolean.valueOf(vn.asBoolean());
+    if (vn.isNull())
+        return null;
+    if (vn.isNumber())
+        return ((NumericNode) vn).numberValue();
+    if (vn.isPojo())
+        return ((POJONode) vn).getPojo();
+
+    if (vn.isTextual())
+        // Quote the string ?
+        return ((TextNode) vn).textValue();
+    // return writeJson(vn);
+ 
+    return vn ;
+}
     public static ObjectMapper getJsonObjectMapper() {
 
         // lets play and avoid syncronization
@@ -164,7 +221,6 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
             mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
                     false);
             mapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, true);
-
 
             if (_theObjectMapper == null)
                 _theObjectMapper = mapper;
