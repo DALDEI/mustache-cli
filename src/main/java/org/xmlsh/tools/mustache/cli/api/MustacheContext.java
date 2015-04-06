@@ -50,14 +50,17 @@ public class MustacheContext {
     // Filesystem based resolver that is encoding configurable
     public class EncodingAwareResolver implements MustacheResolver {
 
+    	/* 
+    	 * For simple File-Not-Found this needs to return null
+    	 * @see com.github.mustachejava.MustacheResolver#getReader(java.lang.String)
+    	 */
         @Override
         public Reader getReader(String resourceName) {
-            try {
-                return getFileReader( resourceName );
-            } catch (FileNotFoundException | UnsupportedEncodingException e) {
-                throw new MustacheException("Error opening resource" + resourceName, e);
-
-            }
+                try {
+					return getFileReader( resourceName );
+				} catch (FileNotFoundException | UnsupportedEncodingException e) {
+					throw new MustacheException( "Error reading resource: " + resourceName , e );
+				}
         }
 
     }
@@ -246,10 +249,12 @@ public class MustacheContext {
         }
     }
 
-     public Reader getFileReader(String filename)
-            throws FileNotFoundException, UnsupportedEncodingException {
+     public Reader getFileReader(String filename) throws FileNotFoundException, UnsupportedEncodingException { 
+        File file =  resolveTemplateFile(filename);
+        if( file == null )
+        	return null;
         return getStreamReader(
-                new FileInputStream( resolveTemplateFile(filename))  );
+                new FileInputStream( file) );
     }
      public Reader getStreamReader(InputStream in )
              throws FileNotFoundException, UnsupportedEncodingException {
@@ -267,7 +272,9 @@ public class MustacheContext {
              file =  new File( filename );
          else
              file = new File( getRoot(), filename );
-         if( !file.exists()||!file.isFile()||!file.canRead() )
+         if( !file.exists())
+        	 return null; 
+         if( ! file.isFile() || ! file.canRead() )
                  throw new MustacheException("File does not exist or is unreadable: " + file);
 
          return file;

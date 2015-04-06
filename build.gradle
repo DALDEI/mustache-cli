@@ -3,7 +3,7 @@ apply plugin: "maven"
 apply plugin: 'eclipse'
 apply plugin: 'application'
 mainClassName = 'org.xmlsh.tools.mustache.cli.main.Main'
-applicationName = 'mustache'
+applicationName = 'mustache-cli'
 
 apply plugin: 'ivy-publish'
 apply plugin: 'maven-publish'
@@ -53,7 +53,6 @@ sourceSets {
 List sharedDeps = [
     'commons-collections:commons-collections:3.1',
     'com.github.spullara.mustache.java:compiler:0.9+',
-    'com.fasterxml.jackson.core:jackson-databind:2.0+',
     'com.fasterxml.jackson.core:jackson-databind:2.0+',
     
      ]
@@ -114,26 +113,3 @@ publishing {
         }
     }
 }
-/*
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            repository(url: uri("${buildDir}/repo"))
-
-            addFilter("main") { artifact, file -> artifact.name == project.name }
-            ["api", "main"].each { type ->
-                addFilter(type) { artifact, file -> artifact.name.endsWith("-$type") }
-                
-                // We now have to map our configurations to the correct maven scope for each pom
-                ["compile", "runtime"].each { scope ->
-                    configuration = configurations[type + scope.capitalize()]
-                    ["main", type].each { pomName ->
-                        pom(pomName).scopeMappings.addMapping 1, configuration, scope
-                    }
-                }
-            }
-
-        }
-    }
-}
-*/
