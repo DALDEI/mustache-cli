@@ -15,6 +15,7 @@ import java.util.Set;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser.Feature;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -28,15 +29,24 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.POJONode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.databind.node.ValueNode;
+import com.github.mustachejava.Binding;
+import com.github.mustachejava.Code;
 import com.github.mustachejava.MustacheException;
+import com.github.mustachejava.ObjectHandler;
+import com.github.mustachejava.TemplateContext;
+import com.github.mustachejava.reflect.BaseObjectHandler;
 import com.github.mustachejava.reflect.ReflectionObjectHandler;
+import com.github.mustachejava.reflect.SimpleObjectHandler;
 import com.github.mustachejava.util.DecoratedCollection;
+import com.github.mustachejava.util.GuardException;
+import com.github.mustachejava.util.Wrapper;
 
 /**
  * Uses Jacksonto support JSON scope objects
  */
-public class JacksonObjectHandler extends ReflectionObjectHandler {
+public class JacksonObjectHandler implements ObjectHandler {
     
+	private ReflectionObjectHandler reflectionHandler = new ReflectionObjectHandler();
     
     private final static  class DecoratedObjectNode extends AbstractMap<String,JsonNode> {
         private final ObjectNode mJso;
@@ -99,6 +109,25 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
         return j;
 
     }
+    public static JsonNode readJson(Reader r) throws JsonProcessingException, IOException 
+    {
+        return getJsonObjectMapper().readTree(r);
+
+    }
+    public static Object readJson(String s) throws JsonProcessingException, IOException {
+
+        return getJsonObjectMapper().readTree(s);
+
+
+    }
+
+    public static Object readJson(InputStream in) throws JsonProcessingException, IOException {
+    	return getJsonObjectMapper().readTree( in );
+
+
+    }
+    
+    /*****
     // Reads a JSON object and converts into a HashMap<String,Node>
     public static Object readJson(Reader r) throws JsonParseException,
     JsonMappingException, IOException {
@@ -128,6 +157,7 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
 
     }
 
+****/
     static volatile ObjectMapper _theObjectMapper = null;
 
     @Override
@@ -230,5 +260,33 @@ public static Object valueNodeToObject( ValueNode vn ){
         }
         return _theObjectMapper;
     }
+	@Override
+	public Wrapper find(final String name, Object[] scopes) {
+
+        for (int i = scopes.length - 1; i >= 0; i--) {
+        	Object scope = scopes[i];
+            if (scope != null) {
+               if( ! (scope instanceof ObjectNode ) )
+            	   continue ;
+               final ObjectNode on = (ObjectNode) scope ;
+               return new Wrapper() {
+
+				@Override
+				public Object call(Object[] scopes) throws GuardException {
+					int dotIndex = name.indexOf(".");
+					
+				}
+               };
+            }
+        }
+        
+        TODO !!!!!  
+        return super.find( name, scopes);
+	}
+	@Override
+	public Binding createBinding(String name, TemplateContext tc, Code code) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }
