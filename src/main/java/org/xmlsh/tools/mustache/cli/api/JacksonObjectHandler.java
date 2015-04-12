@@ -78,7 +78,7 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
         }
 
         @Override
-        public Iterator iterator() {
+        public Iterator<?> iterator() {
             return new DecoratedIterator(mAnode.iterator());
         }
 
@@ -99,7 +99,7 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
         return j;
 
     }
-
+    // Reads a JSON object and converts into a HashMap<String,Node>
     public static Object readJson(Reader r) throws JsonParseException,
     JsonMappingException, IOException {
 
@@ -109,6 +109,7 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
 
     }
 
+    // Reads a JSON object and converts into a HashMap<String,Node>
     public static Object readJson(String s) throws JsonParseException,
     JsonMappingException, IOException {
 
@@ -117,6 +118,7 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
         });
 
     }
+    // Reads a JSON object and converts into a HashMap<String,Node>
 
     public static Object readJson(InputStream in) throws JsonParseException,
     JsonMappingException, IOException {

@@ -16,6 +16,7 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.function.BiConsumer;
 
@@ -34,6 +35,11 @@ import java.util.function.BiConsumer;
 
 
 
+
+
+
+import org.xmlsh.tools.mustache.cli.functions.JsonFunctions;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.mustachejava.DefaultMustacheFactory; 
@@ -44,7 +50,16 @@ import com.github.mustachejava.MustacheResolver;
 
 public class MustacheContext {
     
-    
+	@SuppressWarnings("serial")
+	public 	MustacheContext() {
+		final MustacheContext c = this ;
+		scope.add(  new HashMap<String,Object>() { {
+			put("json" , JsonFunctions.jsonFunction( c)  );
+			put("array" , JsonFunctions.arrayFunction( c)  );
+		}} 
+		);
+		
+	}
     
     
     // Filesystem based resolver that is encoding configurable
