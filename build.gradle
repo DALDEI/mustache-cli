@@ -54,6 +54,8 @@ List sharedDeps = [
     'commons-collections:commons-collections:3.1',
     'com.github.spullara.mustache.java:compiler:0.9+',
     'com.fasterxml.jackson.core:jackson-databind:2.0+',
+	'org.apache.logging.log4j:log4j-api:2.2',
+	'org.apache.logging.log4j:log4j-core:2.2'
     
      ]
 

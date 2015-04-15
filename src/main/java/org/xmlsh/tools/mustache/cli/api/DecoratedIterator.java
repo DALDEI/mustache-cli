@@ -2,13 +2,16 @@ package org.xmlsh.tools.mustache.cli.api;
 
 
 import java.util.Iterator;
-import java.util.function.Function;
 
-import com.github.mustachejava.TemplateFunction;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 public class DecoratedIterator<T> implements Iterator {
+	static Logger mLogger = LogManager.getLogger( );
+	
     Iterator<T> mIter ;
     private int mIndex =  0 ;
     DecoratedIterator(Iterator<T> iter ){
+    	mLogger.entry(iter);
         mIter = iter ;
     }
     

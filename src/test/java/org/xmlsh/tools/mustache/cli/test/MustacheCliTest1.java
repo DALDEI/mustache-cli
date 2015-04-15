@@ -22,6 +22,10 @@ import org.xmlsh.tools.mustache.cli.main.Main;
 import org.xmlsh.tools.mustache.cli.main.Main.UsageException;
 
 public class MustacheCliTest1 {
+	
+	static {
+				//System.setProperty("org.apache.logging.log4j.level","TRACE");
+	}
 
     
     @Rule

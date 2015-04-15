@@ -3,53 +3,34 @@ package org.xmlsh.tools.mustache.cli.api;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.function.BiConsumer;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.xmlsh.tools.mustache.cli.functions.JsonFunctions;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.github.mustachejava.DefaultMustacheFactory; 
-import com.github.mustachejava.resolver.DefaultResolver;
+import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheException;
 import com.github.mustachejava.MustacheResolver;
 
 public class MustacheContext {
     
+	static Logger mLogger = LogManager.getLogger();
 	@SuppressWarnings("serial")
 	public 	MustacheContext() {
 		final MustacheContext c = this ;
@@ -208,6 +189,7 @@ public class MustacheContext {
     }
 
     public void execute() throws Exception {
+    	mLogger.entry();
             assert( output != null);
             assert( getTemplate() != null);
 
@@ -216,7 +198,7 @@ public class MustacheContext {
                     getTemplate_name() == null ? "main" : getTemplate_name(),
                             getDelimStart(), getDelimEnd());
 
-            mustache.execute(getOutput(), getScope().toArray());
+             mustache.execute(getOutput(), getScope().toArray());
             if( mErrors != null )
                 throw mErrors ;
     }

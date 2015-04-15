@@ -5,12 +5,12 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -29,29 +29,24 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.POJONode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.databind.node.ValueNode;
-import com.github.mustachejava.Binding;
-import com.github.mustachejava.Code;
 import com.github.mustachejava.MustacheException;
-import com.github.mustachejava.ObjectHandler;
-import com.github.mustachejava.TemplateContext;
-import com.github.mustachejava.reflect.BaseObjectHandler;
 import com.github.mustachejava.reflect.ReflectionObjectHandler;
-import com.github.mustachejava.reflect.SimpleObjectHandler;
-import com.github.mustachejava.util.DecoratedCollection;
-import com.github.mustachejava.util.GuardException;
-import com.github.mustachejava.util.Wrapper;
 
 /**
  * Uses Jacksonto support JSON scope objects
  */
-public class JacksonObjectHandler implements ObjectHandler {
+public class JacksonObjectHandler extends ReflectionObjectHandler {
+	static Logger mLogger = LogManager.getLogger();
+	
     
-	private ReflectionObjectHandler reflectionHandler = new ReflectionObjectHandler();
     
     private final static  class DecoratedObjectNode extends AbstractMap<String,JsonNode> {
+    	static Logger mLogger = LogManager.getLogger();
+
         private final ObjectNode mJso;
 
         private DecoratedObjectNode(ObjectNode jso) {
+        	mLogger.entry(jso);
             mJso = jso;
         }
 
@@ -84,6 +79,7 @@ public class JacksonObjectHandler implements ObjectHandler {
         private final ArrayNode mAnode;
 
         private DecoratredJsonArray(ArrayNode anode) {
+        	mLogger.entry(anode);
             mAnode = anode;
         }
 
@@ -100,6 +96,7 @@ public class JacksonObjectHandler implements ObjectHandler {
     }
 
     public static Object convertJson(JsonNode j) {
+    	mLogger.entry(j);
         if (j.isObject()) {
             return
                     new DecoratedObjectNode( (ObjectNode) j ) ;
@@ -109,25 +106,6 @@ public class JacksonObjectHandler implements ObjectHandler {
         return j;
 
     }
-    public static JsonNode readJson(Reader r) throws JsonProcessingException, IOException 
-    {
-        return getJsonObjectMapper().readTree(r);
-
-    }
-    public static Object readJson(String s) throws JsonProcessingException, IOException {
-
-        return getJsonObjectMapper().readTree(s);
-
-
-    }
-
-    public static Object readJson(InputStream in) throws JsonProcessingException, IOException {
-    	return getJsonObjectMapper().readTree( in );
-
-
-    }
-    
-    /*****
     // Reads a JSON object and converts into a HashMap<String,Node>
     public static Object readJson(Reader r) throws JsonParseException,
     JsonMappingException, IOException {
@@ -157,7 +135,6 @@ public class JacksonObjectHandler implements ObjectHandler {
 
     }
 
-****/
     static volatile ObjectMapper _theObjectMapper = null;
 
     @Override
@@ -213,80 +190,57 @@ public class JacksonObjectHandler implements ObjectHandler {
 
 public static Object valueNodeToObject( ValueNode vn ){
 
+	mLogger.entry(vn);
+	Object ret = vn;
 
     if (vn.isBinary())
-        return ((BinaryNode) vn).binaryValue();
+        ret =  ((BinaryNode) vn).binaryValue();
+    else
     if (vn.isBoolean())
-        return Boolean.valueOf(vn.asBoolean());
+        ret= Boolean.valueOf(vn.asBoolean());
     if (vn.isNull())
-        return null;
+        ret= null;
     if (vn.isNumber())
-        return ((NumericNode) vn).numberValue();
+        ret= ((NumericNode) vn).numberValue();
     if (vn.isPojo())
-        return ((POJONode) vn).getPojo();
+        ret= ((POJONode) vn).getPojo();
 
     if (vn.isTextual())
         // Quote the string ?
-        return ((TextNode) vn).textValue();
+        ret= ((TextNode) vn).textValue();
     // return writeJson(vn);
  
-    return vn ;
+    return ret ;
 }
-    public static ObjectMapper getJsonObjectMapper() {
+	 public static ObjectMapper getJsonObjectMapper() {
+	    	mLogger.entry();
 
-        // lets play and avoid syncronization
-        // on the off chance this is concurrent 2 mappers are created and one
-        // gets GC'd
-        if (_theObjectMapper == null) {
+	        // lets play and avoid syncronization
+	        // on the off chance this is concurrent 2 mappers are created and one
+	        // gets GC'd
+	        if (_theObjectMapper == null) {
 
-            ObjectMapper mapper = new ObjectMapper();
-            // mapper.registerModule(new JaxbAnnotationModule());
+	            ObjectMapper mapper = new ObjectMapper();
+	            // mapper.registerModule(new JaxbAnnotationModule());
 
-            mapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS,
-                    false);
-            // mapper.configure(DeserializationFeature. x , on );
-            mapper.configure(Feature.ALLOW_SINGLE_QUOTES, true);
-            mapper.configure(Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
-            mapper.configure(Feature.ALLOW_COMMENTS, true);
-            mapper.configure(Feature.ALLOW_NON_NUMERIC_NUMBERS, true);
-            mapper.configure(Feature.ALLOW_NUMERIC_LEADING_ZEROS, true);
-            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-                    false);
-            mapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, true);
+	            mapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS,
+	                    false);
+	            // mapper.configure(DeserializationFeature. x , on );
+	            mapper.configure(Feature.ALLOW_SINGLE_QUOTES, true);
+	            mapper.configure(Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+	            mapper.configure(Feature.ALLOW_COMMENTS, true);
+	            mapper.configure(Feature.ALLOW_NON_NUMERIC_NUMBERS, true);
+	            mapper.configure(Feature.ALLOW_NUMERIC_LEADING_ZEROS, true);
+	            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+	                    false);
+	            mapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, true);
 
-            if (_theObjectMapper == null)
-                _theObjectMapper = mapper;
+	            if (_theObjectMapper == null)
+	                _theObjectMapper = mapper;
 
-        }
-        return _theObjectMapper;
-    }
-	@Override
-	public Wrapper find(final String name, Object[] scopes) {
-
-        for (int i = scopes.length - 1; i >= 0; i--) {
-        	Object scope = scopes[i];
-            if (scope != null) {
-               if( ! (scope instanceof ObjectNode ) )
-            	   continue ;
-               final ObjectNode on = (ObjectNode) scope ;
-               return new Wrapper() {
-
-				@Override
-				public Object call(Object[] scopes) throws GuardException {
-					int dotIndex = name.indexOf(".");
-					
-				}
-               };
-            }
-        }
-        
-        TODO !!!!!  
-        return super.find( name, scopes);
-	}
-	@Override
-	public Binding createBinding(String name, TemplateContext tc, Code code) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+	        }
+	        return _theObjectMapper;
+	    }
+	    
+	    
 }
