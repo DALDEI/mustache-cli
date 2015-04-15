@@ -19,6 +19,7 @@ import java.util.function.BiConsumer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.xmlsh.tools.mustache.cli.functions.FileFunctions;
 import org.xmlsh.tools.mustache.cli.functions.JsonFunctions;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -37,6 +38,10 @@ public class MustacheContext {
 		scope.add(  new HashMap<String,Object>() { {
 			put("json" , JsonFunctions.jsonFunction( c)  );
 			put("array" , JsonFunctions.arrayFunction( c)  );
+			put("quote", JsonFunctions.quoteFunction(c) );
+			put("include",FileFunctions.includeFunction(c));
+			put("lines",FileFunctions.includeFunction(c));
+
 		}} 
 		);
 		
@@ -204,9 +209,9 @@ public class MustacheContext {
     }
 
 
-    public Object parseJson(Reader r) throws JsonProcessingException,
+    public Object parseJsonToMap(Reader r) throws JsonProcessingException,
     IOException {
-        return JacksonObjectHandler.readJson(r);
+        return JacksonObjectHandler.readJsonAsMap(r);
 
     }
 
@@ -215,27 +220,25 @@ public class MustacheContext {
         return JacksonObjectHandler.convertJson(r);
 
     }
-    private Object parseJson(String s) throws JsonProcessingException,
+    private Object parseJsonToMap(String s) throws JsonProcessingException,
     IOException {
 
-        return JacksonObjectHandler.readJson(s );
-
-
+        return JacksonObjectHandler.readJsonAsMap(s );
     }
 
-    private Object parseJson(InputStream in) throws JsonProcessingException,
+    private Object parseJsonToMap(InputStream in) throws JsonProcessingException,
     IOException {
-        return JacksonObjectHandler.readJson(in );
+        return JacksonObjectHandler.readJsonAsMap(in );
     }
 
     public void addJsonScope(String arg) throws JsonProcessingException,
     IOException {
-        getScope().add(parseJson(arg));
+        getScope().add(parseJsonToMap(arg));
     }
 
     public void addJsonScope(InputStream in) throws JsonProcessingException,
     IOException {
-        getScope().add(parseJson(in));
+        getScope().add(parseJsonToMap(in));
 
     }
 
@@ -258,7 +261,7 @@ public class MustacheContext {
          return new InputStreamReader(in, getInputEncoding() );
      }
 
-     String getInputEncoding() {
+     public String getInputEncoding() {
          return mInputEncoding ;
     }
 
@@ -277,6 +280,10 @@ public class MustacheContext {
          return file;
     
     
+    }
+    
+    public File resolveFile( String filename ){
+    	return resolveTemplateFile( filename );
     }
 
     public void setRoot(File file) {
@@ -300,7 +307,7 @@ public class MustacheContext {
 
     public void addJsonScope(Reader reader) throws JsonProcessingException, IOException {
 
-        getScope().add(parseJson(reader));
+        getScope().add(parseJsonToMap(reader));
     }
 
     public void addJsonScope(JsonNode json) throws JsonProcessingException, IOException {

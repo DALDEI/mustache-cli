@@ -3,11 +3,7 @@ package org.xmlsh.tools.mustache.cli.api;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.util.AbstractMap;
-import java.util.AbstractSet;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,61 +36,6 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
 	
     
     
-    private final static  class DecoratedObjectNode extends AbstractMap<String,JsonNode> {
-    	static Logger mLogger = LogManager.getLogger();
-
-        private final ObjectNode mJso;
-
-        private DecoratedObjectNode(ObjectNode jso) {
-        	mLogger.entry(jso);
-            mJso = jso;
-        }
-
-        @Override
-        public String toString() {
-            return writeJson(mJso);
-        }
-
-        @Override
-        public   Set<Entry<String,JsonNode> >  entrySet() {
-          return   new AbstractSet<Entry<String,JsonNode>>() {
-                @Override
-                public Iterator<Entry<String,JsonNode> > iterator() {
-                    return mJso.fields();
-                }
-                @Override
-                public int size() {
-                    return 0;
-                } 
-            };
-        }
-
-        public JsonNode getNode() {
-            return mJso;
-        }
-
-    }
-
-    private final static class DecoratredJsonArray implements Iterable {
-        private final ArrayNode mAnode;
-
-        private DecoratredJsonArray(ArrayNode anode) {
-        	mLogger.entry(anode);
-            mAnode = anode;
-        }
-
-        @Override
-        public Iterator<?> iterator() {
-            return new DecoratedIterator(mAnode.iterator());
-        }
-
-        @Override
-        public String toString() {
-            return writeJson(mAnode);
-        }
-
-    }
-
     public static Object convertJson(JsonNode j) {
     	mLogger.entry(j);
         if (j.isObject()) {
@@ -107,7 +48,7 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
 
     }
     // Reads a JSON object and converts into a HashMap<String,Node>
-    public static Object readJson(Reader r) throws JsonParseException,
+    public static Object readJsonAsMap(Reader r) throws JsonParseException,
     JsonMappingException, IOException {
 
         return getJsonObjectMapper().readValue(r,
@@ -117,23 +58,24 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
     }
 
     // Reads a JSON object and converts into a HashMap<String,Node>
-    public static Object readJson(String s) throws JsonParseException,
+    public static Object readJsonAsMap(String s) throws JsonParseException,
     JsonMappingException, IOException {
 
         return getJsonObjectMapper().readValue(s,
                 new TypeReference<HashMap<String, JsonNode>>() {
         });
-
     }
     // Reads a JSON object and converts into a HashMap<String,Node>
 
-    public static Object readJson(InputStream in) throws JsonParseException,
+    public static Object readJsonAsMap(InputStream in) throws JsonParseException,
     JsonMappingException, IOException {
         return getJsonObjectMapper().readValue(in,
                 new TypeReference<HashMap<String, JsonNode>>() {
         });
-
     }
+    
+    
+    
 
     static volatile ObjectMapper _theObjectMapper = null;
 

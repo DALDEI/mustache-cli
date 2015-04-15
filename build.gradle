@@ -69,6 +69,7 @@ dependencies {
     testCompile 'com.github.stefanbirkner:system-rules:1.8.0'
     
     testCompile sourceSets.main.output
+	
    
 }
 

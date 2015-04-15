@@ -7,22 +7,27 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 public class DecoratedIterator<T> implements Iterator {
 	static Logger mLogger = LogManager.getLogger( );
-	
+	String prefix ;
+	String suffix ;
+	String delim;
     Iterator<T> mIter ;
     private int mIndex =  0 ;
-    DecoratedIterator(Iterator<T> iter ){
+    DecoratedIterator(Iterator<T> iter , String prefix , String delim , String suffix ){
     	mLogger.entry(iter);
         mIter = iter ;
+        this.prefix = prefix;
+        this.delim = delim ; 
+        this.suffix = suffix ;
     }
     
     public class Element 
     {
         public final T value;
         public final boolean next = mIter.hasNext();
-        public final String delim = next  ? "," : null ;
         public final boolean first ;
         public final boolean last = ! next ;
         public final int   index;
+        
         
         
         Element(T v , int index ){ 
@@ -39,6 +44,15 @@ public class DecoratedIterator<T> implements Iterator {
         @Override
         public String toString() {
             return JacksonObjectHandler.writeObject(value);
+        }
+        public String getDelim() {
+        	return next ? delim : "";
+        }
+        public String getPrefix() {
+        	return first ? prefix : "" ;
+        }
+        public String getSuffix() {
+        	return last ? suffix :"";
         }
 
     }

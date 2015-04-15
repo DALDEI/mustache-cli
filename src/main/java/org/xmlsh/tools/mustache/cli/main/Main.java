@@ -177,7 +177,7 @@ public class Main {
 					    mContext.addJsonScope( mContext.getStreamReader(System.in ));
                     else
                         try (Reader r = mContext.getFileReader( fname ) ){
-                        	Object jn = mContext.parseJson(r);
+                        	Object jn = mContext.parseJsonToMap(r);
                         	mContext.getScope().add(jn);
                         }
 					break;
