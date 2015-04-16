@@ -40,7 +40,8 @@ public class MustacheContext {
 			put("array" , JsonFunctions.arrayFunction( c)  );
 			put("quote", JsonFunctions.quoteFunction(c) );
 			put("include",FileFunctions.includeFunction(c));
-			put("lines",FileFunctions.includeFunction(c));
+			//put("lines",FileFunctions.includeFunction(c));
+			put("reparse", FileFunctions.reparseFunction(c));
 
 		}} 
 		);

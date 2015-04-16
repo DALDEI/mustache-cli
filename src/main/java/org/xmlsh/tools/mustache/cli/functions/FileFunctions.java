@@ -64,10 +64,43 @@ public class FileFunctions {
 		}
 		
 	}
+	
+	/*
+	 * Surounds the body by the curent em and returns it for reparsing
+	 */
+	
+	static class ReparseFunction implements TemplateFunction {
+
+		MustacheContext context;
+		ReparseFunction(MustacheContext c ) { 
+			context = c ;
+		}
+
+		@Override
+		public String apply(String t) {
+
+			if( t == null )
+				return null;
+			
+			StringBuilder sb = new StringBuilder();
+			sb.append( context.getDelimStart() );
+				sb.append( t );
+			sb.append( context.getDelimEnd() )
+;			return sb.toString();
+			
+			
+		}
+		
+	}
+	
+	
 	public static Object includeFunction(MustacheContext c) { 
 		return new IncludeFunction( c );
 	}
 	public static Object linesFunction(MustacheContext c) { 
 		return new IncludeFunction( c );
+	}
+	public static Object reparseFunction(MustacheContext c) { 
+		return new ReparseFunction( c );
 	}
 }

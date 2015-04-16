@@ -75,6 +75,23 @@ public class MustacheCliTestFunctions1 {
         
     }
     
-    
+    @Test
+    public void test3() throws Exception {
+        Main main = new Main( new String[] {
+           "-t" ,
+                "{{#reparse}}parsed.{{obj}}{{/reparse}}\n" , 
+            "-j" ,
+           "{ 'parsed' :{ 'object' : [ 1 , 'foo' ]}} ",  
+           "obj=object" }
+        );
+           main.run();
+
+         String out = outLog.getLog();
+         
+         
+        String expected = "{\"parsed\":{\"object\":[1,\"foo\"]},\"test\":\"bar\"}\n";
+        assertEquals("Expanded template", expected, out);
+        
+    }
     
 }

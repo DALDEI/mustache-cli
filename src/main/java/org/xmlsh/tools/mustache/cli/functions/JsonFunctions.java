@@ -13,6 +13,10 @@ import com.github.mustachejava.TemplateFunction;
 
 public class JsonFunctions {
 
+	
+	/*
+	 * This function doesnt work properly ... 
+	 */
 	static class JsonArrayFunction implements TemplateFunction {
 
 		MustacheContext context;
