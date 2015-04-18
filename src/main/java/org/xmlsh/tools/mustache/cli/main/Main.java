@@ -140,7 +140,7 @@ public class Main {
 				case "--root" : 
 				case "-R" :
 				case "--template-dir" : 
-					mContext.setRoot(  new File(requiresArg(++i,args)));
+					mContext.addTemplateRoot(  new File(requiresArg(++i,args)));
 				break;
 				
 				case "-f":
