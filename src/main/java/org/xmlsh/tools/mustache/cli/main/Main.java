@@ -118,7 +118,7 @@ public class Main {
         
 	
 	
-    private MustacheContext mContext = new MustacheContext();
+    private MustacheContext mContext = new MustacheContext( new File(".").getAbsoluteFile() );
 
 
 	

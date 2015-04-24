@@ -34,9 +34,17 @@ public class MustacheContext {
 
 	static Logger mLogger = LogManager.getLogger();
 
+	private File mCurDir;
+
+	
+	
+	public MustacheContext() { 
+		this(new File(System.getProperty(".")));
+	}
 	@SuppressWarnings("serial")
-	public MustacheContext() {
+	public MustacheContext(File curdir) {
 		final MustacheContext c = this;
+		mCurDir = curdir;
 		scope.add(new HashMap<String, Object>() {
 			{
 				put("json", JsonFunctions.jsonFunction(c));
@@ -62,11 +70,12 @@ public class MustacheContext {
 		 */
 		@Override
 		public Reader getReader(String resourceName) {
+			mLogger.entry(resourceName);
 			try {
-				return getFileReader(resourceName);
+				return mLogger.exit(getFileReader(resourceName));
 			} catch (FileNotFoundException | UnsupportedEncodingException e) {
-				throw new MustacheException("Error reading resource: "
-						+ resourceName, e);
+				throw mLogger.throwing(new MustacheException("Error reading resource: "
+						+ resourceName, e));
 			}
 		}
 
@@ -249,10 +258,13 @@ public class MustacheContext {
 
 	public Reader getFileReader(String filename) throws FileNotFoundException,
 			UnsupportedEncodingException {
+		mLogger.entry(filename);
 		File file = resolveTemplateFile(filename);
 		if (file == null)
-			return null;
+			return mLogger.exit(null);
+		mLogger.info("resolved to file {}",file.getAbsolutePath() );
 		return getStreamReader(new FileInputStream(file));
+
 	}
 
 	public Reader getStreamReader(InputStream in) throws FileNotFoundException,
@@ -264,20 +276,25 @@ public class MustacheContext {
 		return mInputEncoding;
 	}
 
+	File newFile( String filename ){
+		return new File( mCurDir , filename );
+	}
 	File resolveTemplateFile(String filename) {
-		File file = tryFile(new File(filename));
+		mLogger.entry(filename);
+		File file = tryFile(newFile(filename));
 		if (file != null)
 			return file;
 		for (File root : mTemplatePath) {
 			file = tryFile(new File(root, filename));
 			if (file != null)
-				return file;
+				return mLogger.exit(file);
 
 		}
-		return null;
+		return mLogger.exit(null);
 	}
 
 	File tryFile(File file) {
+		mLogger.entry(file);
 		if (!file.exists())
 			return null;
 
@@ -285,7 +302,7 @@ public class MustacheContext {
 			throw new MustacheException(
 					"File does not exist or is unreadable: " + file);
 
-		return file;
+		return mLogger.exit(file);
 	}
 
 	public File resolveFile(String filename) {
@@ -342,6 +359,14 @@ public class MustacheContext {
 	public void setOutput(OutputStream out) throws UnsupportedEncodingException {
 		setOutput(new OutputStreamWriter(out, getOutpuEncoding()));
 
+	}
+
+	public File getCurDir() {
+		return mCurDir;
+	}
+
+	public void setCurDir(File mCurDir) {
+		this.mCurDir = mCurDir;
 	}
 
 }
