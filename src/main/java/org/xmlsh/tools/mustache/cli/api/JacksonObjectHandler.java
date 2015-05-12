@@ -44,7 +44,7 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
         }
         if( j.isArray())
             return new DecoratredJsonArray((ArrayNode) j );
-        return j;
+        return mLogger.exit(j);
 
     }
     // Reads a JSON object and converts into a HashMap<String,Node>
@@ -58,20 +58,26 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
     }
 
     // Reads a JSON object and converts into a HashMap<String,Node>
-    public static Object readJsonAsMap(String s) throws JsonParseException,
-    JsonMappingException, IOException {
+    public static Object readJsonAsMap(String s)  {
 
-        return getJsonObjectMapper().readValue(s,
-                new TypeReference<HashMap<String, JsonNode>>() {
-        });
+        try {
+          return getJsonObjectMapper().readValue(s,
+                  new TypeReference<HashMap<String, JsonNode>>() {
+          });
+        } catch (IOException e) {
+          throw new MustacheException(e);
+        }
     }
     // Reads a JSON object and converts into a HashMap<String,Node>
 
-    public static Object readJsonAsMap(InputStream in) throws JsonParseException,
-    JsonMappingException, IOException {
-        return getJsonObjectMapper().readValue(in,
-                new TypeReference<HashMap<String, JsonNode>>() {
-        });
+    public static Object readJsonAsMap(InputStream in) {
+        try {
+          return getJsonObjectMapper().readValue(in,
+                  new TypeReference<HashMap<String, JsonNode>>() {
+          });
+        } catch (IOException e) {
+          throw new MustacheException(e);
+        }
     }
     
     
@@ -115,6 +121,7 @@ public class JacksonObjectHandler extends ReflectionObjectHandler {
 
     @Override
     public Object coerce(Object object) {
+      mLogger.entry(object);
         if (object instanceof JsonNode) {
             final JsonNode jso = (JsonNode) object;
             if (jso.isArray() || jso.isObject() )
@@ -152,7 +159,7 @@ public static Object valueNodeToObject( ValueNode vn ){
         ret= ((TextNode) vn).textValue();
     // return writeJson(vn);
  
-    return ret ;
+    return mLogger.exit( ret );
 }
 	 public static ObjectMapper getJsonObjectMapper() {
 	    	mLogger.entry();

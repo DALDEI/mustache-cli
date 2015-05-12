@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.function.Function;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.xmlsh.tools.mustache.cli.api.JacksonObjectHandler;
 import org.xmlsh.tools.mustache.cli.api.MustacheContext;
 
@@ -13,7 +15,8 @@ import com.github.mustachejava.TemplateFunction;
 
 public class JsonFunctions {
 
-	
+  static Logger mLogger = LogManager.getLogger();
+
 	/*
 	 * This function doesnt work properly ... 
 	 */
@@ -26,6 +29,7 @@ public class JsonFunctions {
 
 		@Override
 		public String apply(String t) {
+		  mLogger.entry();
 			StringBuilder sb = new StringBuilder();
 			sb.append("[ ");
 			
@@ -49,6 +53,7 @@ public class JsonFunctions {
 		}
 		@Override
 		public Object apply(String text) {
+		  mLogger.entry();
 
 			try {
 				JsonNode node = 
@@ -70,6 +75,7 @@ public class JsonFunctions {
 		}
 		@Override
 		public Object apply(String text) {
+                  mLogger.entry();
 
 			try {
 				return JacksonObjectHandler.getJsonObjectMapper().writeValueAsString(text);

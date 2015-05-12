@@ -9,6 +9,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.xmlsh.tools.mustache.cli.api.JacksonObjectHandler;
 import org.xmlsh.tools.mustache.cli.api.MustacheContext;
 
@@ -17,6 +19,7 @@ import com.github.mustachejava.MustacheException;
 import com.github.mustachejava.TemplateFunction;
 
 public class FileFunctions {
+  static Logger mLogger = LogManager.getLogger();
 
 	static class IncludeFunction implements Function<String,String> {
 
@@ -27,6 +30,7 @@ public class FileFunctions {
 
 		@Override
 		public String apply(String t) {
+		  mLogger.entry(t);
 			if( t == null )
 				return null;
 			try {
