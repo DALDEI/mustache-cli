@@ -193,7 +193,7 @@ public class Main {
         case "--json":
           break;
         case "--html":
-          mContext.setEncoder((v, w) -> HtmlEscaper.escape(v, w));
+          mContext.setEncoder((v, w) -> HtmlEscaper.escape(v, w,true));
           break;
         case "-h":
         case "--help":
