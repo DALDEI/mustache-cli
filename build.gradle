@@ -122,10 +122,11 @@ publishing {
     }
 }
 
+if( hasProperty("bintrayUser") )
 bintray {
   
-  user = project.bintrayUser 
-  key = project.bintrayKey
+  user = project.getProperty("bintrayUser")
+  key = project.getProperty("bintrayKey")
   
 
   filesSpec {
