@@ -12,8 +12,13 @@ applicationName = 'mustache-cli'
 apply plugin: 'ivy-publish'
 apply plugin: 'maven-publish'
 group = "org.xmlsh"
-version = 1.0
+version = '1.1'
+ext {
+  releaseVersion = "release-$version"
+  vcsVersion = "v$version"
+}
 
+ 
 task wrapper( type: Wrapper ) {
   gradleVersion = '2.4'
 }
@@ -22,22 +27,6 @@ task wrapper( type: Wrapper ) {
 repositories {
     mavenLocal()
     jcenter()
-
-	maven {
-		url "${awsRepoBucket}/maven2"
-		credentials(AwsCredentials) {
-			accessKey "${awsAccessKey}"
-			secretKey "${awsSecretKey}"
-		}
-	}
-	
-	ivy {
-		url "${awsRepoBucket}/ivyrepo"
-		credentials(AwsCredentials) {
-			accessKey "${awsAccessKey}"
-			secretKey "${awsSecretKey}"
-		}
-	}
 }
 
 sourceSets.all { set ->
@@ -109,25 +98,6 @@ task sourceJar(type: Jar) {
 }
 
 publishing {
-    repositories {
-		maven {
-			url "${awsRepoBucket}/maven2"
-			credentials(AwsCredentials) {
-				accessKey "${awsAccessKey}"
-				secretKey "${awsSecretKey}"
-			}
-		}
-		
-		ivy {
-			url "${awsRepoBucket}/ivyrepo"
-			credentials(AwsCredentials) {
-				accessKey "${awsAccessKey}"
-				secretKey "${awsSecretKey}"
-			}
-		}
-		
-		
-    }
     publications {
         mavenJava(MavenPublication) {
             from components.java
@@ -172,19 +142,19 @@ bintray {
       name = 'mustache-cli'
       userOrg = ''
       desc = 'A CLI for mustache.java'
-      websiteUrl = 'https://github.com/DALDEI/mustache-cli'
-      issueTrackerUrl = 'https://github.com/DALDEI/mustache-cli/issues'
-      vcsUrl = 'https://github.com/DALDEI/mustache-cli.git'
+      websiteUrl = 'https://github.com/daldei/mustache-cli'
+      issueTrackerUrl = 'https://github.com/daldei/mustache-cli/issues'
+      vcsUrl = 'https://github.com/daldei/mustache-cli.git'
       licenses = ['BSD Simplified']
       labels = ['json', 'mustache', 'mustache.java' , 'java' , 'cli']
       publicDownloadNumbers = true
       // attributes= ['a': ['ay1', 'ay2'], 'b': ['bee'], c: 'cee'] //Optional package-level attributes
       //Optional version descriptor
       version {
-          name = 'release-1.0' //Bintray logical version name
+          name = "$releaseVersion" //Bintray logical version name
         //  desc = //Optional - Version-specific description'
         //  released  = //Optional - Date of the version release. 2 possible values: date in the format of 'yyyy-MM-dd'T'HH:mm:ss.SSSZZ' OR a java.util.Date instance
-          vcsTag = 'release-1.0'
+          vcsTag = "$vcsVersion"
         //  attributes = ['gradle-plugin': 'com.use.less:com.use.less.gradle:gradle-useless-plugin'] //Optional version-level attributes
           //Optional configuration for GPG signing
       //    gpg {
